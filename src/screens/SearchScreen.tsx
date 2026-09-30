@@ -1,0 +1,499 @@
+import {
+  View,
+  Text,
+  TextInput,
+  Image,
+  StyleSheet,
+  Pressable,
+  FlatList,
+} from 'react-native';
+
+import { useState } from 'react';
+
+import { musics } from '../data/musics';
+import { useMusic } from '../context/MusicContext';
+
+export default function SearchScreen({
+  navigation,
+}: any) {
+  const [search, setSearch] = useState('');
+
+  const {
+    setCurrentMusic,
+    favorites,
+    playlist,
+    addFavorite,
+    removeFavorite,
+    addToPlaylist,
+    removeFromPlaylist,
+  } = useMusic();
+
+  const filteredMusics = musics.filter((music) => {
+    const term = search.toLowerCase().trim();
+
+    if (!term) {
+      return true;
+    }
+
+    return (
+      music.title.toLowerCase().includes(term) ||
+      music.artist.toLowerCase().includes(term) ||
+      music.album.toLowerCase().includes(term)
+    );
+  });
+
+  function openPlayer(music: any) {
+    setCurrentMusic(music);
+
+    navigation.getParent()?.navigate('Player', {
+      music,
+    });
+  }
+
+  function toggleFavorite(music: any) {
+    const exists = favorites.some(
+      (item) => item.id === music.id
+    );
+
+    if (exists) {
+      removeFavorite(music.id);
+    } else {
+      addFavorite(music);
+    }
+  }
+
+  function togglePlaylist(music: any) {
+    const exists = playlist.some(
+      (item) => item.id === music.id
+    );
+
+    if (exists) {
+      removeFromPlaylist(music.id);
+    } else {
+      addToPlaylist(music);
+    }
+  }
+
+  function isFavorite(music: any) {
+    return favorites.some(
+      (item) => item.id === music.id
+    );
+  }
+
+  function isInPlaylist(music: any) {
+    return playlist.some(
+      (item) => item.id === music.id
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+
+      {/* HEADER */}
+
+      <View style={styles.header}>
+        <Text style={styles.smallTitle}>
+          MUSICCR
+        </Text>
+
+        <Text style={styles.title}>
+          Pesquisar
+        </Text>
+      </View>
+
+      {/* PESQUISA */}
+
+      <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>
+          ⌕
+        </Text>
+
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Pesquisar música, artista ou álbum..."
+          placeholderTextColor="#666A6E"
+          style={styles.input}
+          autoCorrect={false}
+          autoCapitalize="none"
+          returnKeyType="search"
+        />
+
+        {search.length > 0 && (
+          <Pressable
+            style={styles.clearButton}
+            onPress={() => setSearch('')}
+          >
+            <Text style={styles.clearText}>
+              ×
+            </Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* RESULTADOS */}
+
+      <View style={styles.resultHeader}>
+        <Text style={styles.resultTitle}>
+          {search.trim()
+            ? 'RESULTADOS'
+            : 'TODAS AS MÚSICAS'}
+        </Text>
+
+        <Text style={styles.resultCount}>
+          {filteredMusics.length}
+        </Text>
+      </View>
+
+      {filteredMusics.length === 0 ? (
+        <View style={styles.emptyContainer}>
+
+          <View style={styles.emptyIconContainer}>
+            <Text style={styles.emptyIcon}>
+              ⌕
+            </Text>
+          </View>
+
+          <Text style={styles.emptyTitle}>
+            Nenhuma música encontrada
+          </Text>
+
+          <Text style={styles.emptyText}>
+            Tente pesquisar por outro nome,
+            artista ou álbum.
+          </Text>
+
+        </View>
+      ) : (
+        <FlatList
+          data={filteredMusics}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.list}
+          renderItem={({ item, index }) => (
+            <View style={styles.musicCard}>
+
+              <Pressable
+                style={styles.musicMain}
+                onPress={() => openPlayer(item)}
+              >
+
+                <View style={styles.numberContainer}>
+                  <Text style={styles.number}>
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
+                </View>
+
+                <Image
+                  source={item.cover}
+                  style={styles.cover}
+                />
+
+                <View style={styles.info}>
+
+                  <Text
+                    style={styles.musicTitle}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+
+                  <Text
+                    style={styles.artist}
+                    numberOfLines={1}
+                  >
+                    {item.artist}
+                  </Text>
+
+                  <Text
+                    style={styles.album}
+                    numberOfLines={1}
+                  >
+                    {item.album}
+                  </Text>
+
+                </View>
+
+              </Pressable>
+
+              {/* AÇÕES */}
+
+              <View style={styles.actions}>
+
+                <Pressable
+                  style={[
+                    styles.actionButton,
+                    isFavorite(item) &&
+                      styles.activeAction,
+                  ]}
+                  onPress={() =>
+                    toggleFavorite(item)
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.actionIcon,
+                      isFavorite(item) &&
+                        styles.activeActionText,
+                    ]}
+                  >
+                    {isFavorite(item) ? '♥' : '♡'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.actionButton,
+                    isInPlaylist(item) &&
+                      styles.activeAction,
+                  ]}
+                  onPress={() =>
+                    togglePlaylist(item)
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.actionIcon,
+                      isInPlaylist(item) &&
+                        styles.activeActionText,
+                    ]}
+                  >
+                    {isInPlaylist(item) ? '✓' : '+'}
+                  </Text>
+                </Pressable>
+
+              </View>
+
+            </View>
+          )}
+        />
+      )}
+
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0B0C0E',
+  },
+
+  header: {
+    paddingHorizontal: 22,
+    paddingTop: 25,
+    paddingBottom: 18,
+  },
+
+  smallTitle: {
+    color: '#F4510B',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+
+  title: {
+    marginTop: 5,
+    color: '#FFFFFF',
+    fontSize: 30,
+    fontWeight: '800',
+  },
+
+  searchContainer: {
+    height: 54,
+    marginHorizontal: 18,
+    paddingHorizontal: 16,
+    borderRadius: 17,
+    backgroundColor: '#15171A',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  searchIcon: {
+    color: '#F4510B',
+    fontSize: 25,
+    marginRight: 9,
+  },
+
+  input: {
+    flex: 1,
+    height: '100%',
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+
+  clearButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#24272B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  clearText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    lineHeight: 25,
+  },
+
+  resultHeader: {
+    paddingHorizontal: 22,
+    marginTop: 25,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  resultTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+  },
+
+  resultCount: {
+    marginLeft: 9,
+    minWidth: 25,
+    height: 25,
+    borderRadius: 13,
+    backgroundColor: '#17191C',
+    color: '#777A7D',
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    paddingTop: 5,
+  },
+
+  list: {
+    paddingHorizontal: 18,
+    paddingBottom: 30,
+  },
+
+  musicCard: {
+    minHeight: 82,
+    marginBottom: 11,
+    padding: 9,
+    borderRadius: 18,
+    backgroundColor: '#121417',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  musicMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  numberContainer: {
+    width: 27,
+    alignItems: 'center',
+  },
+
+  number: {
+    color: '#55595D',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  cover: {
+    width: 58,
+    height: 58,
+    borderRadius: 11,
+  },
+
+  info: {
+    flex: 1,
+    marginLeft: 13,
+    marginRight: 5,
+  },
+
+  musicTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  artist: {
+    marginTop: 5,
+    color: '#F4510B',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  album: {
+    marginTop: 3,
+    color: '#777A7D',
+    fontSize: 10,
+  },
+
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  actionButton: {
+    width: 37,
+    height: 37,
+    borderRadius: 19,
+    backgroundColor: '#191B1E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 5,
+  },
+
+  activeAction: {
+    backgroundColor: '#2A1A14',
+  },
+
+  actionIcon: {
+    color: '#777A7D',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+
+  activeActionText: {
+    color: '#F4510B',
+  },
+
+  emptyContainer: {
+    flex: 1,
+    paddingHorizontal: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 80,
+  },
+
+  emptyIconContainer: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#15171A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 22,
+  },
+
+  emptyIcon: {
+    color: '#F4510B',
+    fontSize: 42,
+  },
+
+  emptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  emptyText: {
+    marginTop: 10,
+    color: '#777A7D',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+});
