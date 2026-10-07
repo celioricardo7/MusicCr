@@ -1,10 +1,10 @@
 import {
   View,
   Text,
-  Image,
   StyleSheet,
-  Pressable,
   FlatList,
+  Image,
+  Pressable,
 } from 'react-native';
 
 import { useMusic } from '../context/MusicContext';
@@ -15,40 +15,26 @@ export default function FavoritesScreen({
   const {
     favorites,
     setCurrentMusic,
-    playMusic,
+    removeFavorite,
   } = useMusic();
 
-  function playFavorite(music: any) {
+  function abrirPlayer(music: any) {
     setCurrentMusic(music);
-    navigation.navigate('Player', {
-      music,
-    });
 
-    /*
-     * O PlayerScreen ficará responsável
-     * por iniciar o áudio depois de criar
-     * o player correspondente.
-     */
-    setTimeout(() => {
-      playMusic();
-    }, 100);
-  }
-
-  function openFavorite(music: any) {
-    navigation.navigate('Player', {
-      music,
-    });
+    navigation
+      .getParent()
+      ?.navigate('Player', {
+        music,
+      });
   }
 
   return (
     <View style={styles.container}>
 
-      {/* HEADER */}
-
       <View style={styles.header}>
         <View>
           <Text style={styles.smallTitle}>
-            SUA COLEÇÃO
+            MUSICCR
           </Text>
 
           <Text style={styles.title}>
@@ -63,37 +49,20 @@ export default function FavoritesScreen({
         </View>
       </View>
 
-      {/* LISTA */}
-
       {favorites.length === 0 ? (
-        <View style={styles.emptyContainer}>
-
-          <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIcon}>
-              ♡
-            </Text>
-          </View>
+        <View style={styles.empty}>
+          <Text style={styles.emptyIcon}>
+            ♡
+          </Text>
 
           <Text style={styles.emptyTitle}>
-            Ainda não há favoritos
+            Ainda não tens favoritos
           </Text>
 
           <Text style={styles.emptyText}>
-            Adicione músicas aos seus favoritos
-            para encontrá-las rapidamente aqui.
+            As músicas que marcares com coração
+            aparecerão aqui.
           </Text>
-
-          <Pressable
-            style={styles.exploreButton}
-            onPress={() =>
-              navigation.navigate('Home')
-            }
-          >
-            <Text style={styles.exploreText}>
-              EXPLORAR MÚSICAS
-            </Text>
-          </Pressable>
-
         </View>
       ) : (
         <FlatList
@@ -102,61 +71,81 @@ export default function FavoritesScreen({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
           renderItem={({ item, index }) => (
-            <Pressable
-              style={styles.musicCard}
-              onPress={() => openFavorite(item)}
-            >
-
-              <View style={styles.numberContainer}>
-                <Text style={styles.number}>
-                  {String(index + 1).padStart(2, '0')}
-                </Text>
-              </View>
-
-              <Image
-                source={item.cover}
-                style={styles.cover}
-              />
-
-              <View style={styles.info}>
-                <Text
-                  style={styles.musicTitle}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </Text>
-
-                <Text
-                  style={styles.artist}
-                  numberOfLines={1}
-                >
-                  {item.artist}
-                </Text>
-
-                <Text
-                  style={styles.album}
-                  numberOfLines={1}
-                >
-                  {item.album}
-                </Text>
-              </View>
+            <View style={styles.musicCard}>
 
               <Pressable
-                style={styles.playButton}
+                style={styles.musicMain}
                 onPress={() =>
-                  playFavorite(item)
+                  abrirPlayer(item)
                 }
               >
-                <Text style={styles.playIcon}>
-                  ▶
+                <Text style={styles.number}>
+                  {String(index + 1).padStart(
+                    2,
+                    '0'
+                  )}
+                </Text>
+
+                {item.cover ? (
+                  <Image
+                    source={{
+                      uri: item.cover,
+                    }}
+                    style={styles.cover}
+                  />
+                ) : (
+                  <View
+                    style={
+                      styles.coverPlaceholder
+                    }
+                  >
+                    <Text
+                      style={styles.coverIcon}
+                    >
+                      ♪
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.info}>
+                  <Text
+                    style={styles.musicTitle}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+
+                  <Text
+                    style={styles.artist}
+                    numberOfLines={1}
+                  >
+                    {item.artist}
+                  </Text>
+
+                  <Text
+                    style={styles.album}
+                    numberOfLines={1}
+                  >
+                    {item.album}
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                style={styles.favoriteButton}
+                onPress={() =>
+                  removeFavorite(item.id)
+                }
+              >
+                <Text style={styles.favoriteIcon}>
+                  ♥
                 </Text>
               </Pressable>
 
-            </Pressable>
+            </View>
           )}
         />
       )}
-
     </View>
   );
 }
@@ -177,10 +166,10 @@ const styles = StyleSheet.create({
   },
 
   smallTitle: {
-    color: '#777A7D',
+    color: '#F4510B',
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.4,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
 
   title: {
@@ -212,124 +201,114 @@ const styles = StyleSheet.create({
   },
 
   musicCard: {
-    minHeight: 82,
-    marginBottom: 12,
-    padding: 10,
-    borderRadius: 18,
+    minHeight: 78,
+    marginBottom: 10,
+    padding: 9,
+    borderRadius: 17,
     backgroundColor: '#121417',
     flexDirection: 'row',
     alignItems: 'center',
   },
 
-  numberContainer: {
-    width: 28,
+  musicMain: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
   },
 
   number: {
+    width: 28,
+    textAlign: 'center',
     color: '#55595D',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
   },
 
   cover: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
+    width: 58,
+    height: 58,
+    borderRadius: 11,
+  },
+
+  coverPlaceholder: {
+    width: 58,
+    height: 58,
+    borderRadius: 11,
+    backgroundColor: '#1C1F22',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  coverIcon: {
+    color: '#F4510B',
+    fontSize: 25,
+    fontWeight: '700',
   },
 
   info: {
     flex: 1,
-    marginLeft: 14,
-    marginRight: 10,
+    marginLeft: 13,
+    marginRight: 8,
   },
 
   musicTitle: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
 
   artist: {
     marginTop: 5,
     color: '#F4510B',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
 
   album: {
     marginTop: 3,
     color: '#777A7D',
-    fontSize: 11,
+    fontSize: 10,
   },
 
-  playButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#F4510B',
+  favoriteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2A1A14',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  playIcon: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    marginLeft: 2,
+  favoriteIcon: {
+    color: '#F4510B',
+    fontSize: 19,
   },
 
-  emptyContainer: {
+  empty: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 35,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 80,
-  },
-
-  emptyIconContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#15171A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 22,
   },
 
   emptyIcon: {
     color: '#F4510B',
-    fontSize: 44,
+    fontSize: 55,
+    marginBottom: 18,
   },
 
   emptyTitle: {
     color: '#FFFFFF',
-    fontSize: 21,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
     textAlign: 'center',
   },
 
   emptyText: {
-    marginTop: 10,
+    marginTop: 9,
     color: '#777A7D',
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13,
+    lineHeight: 20,
     textAlign: 'center',
-  },
-
-  exploreButton: {
-    marginTop: 25,
-    paddingHorizontal: 22,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#F4510B',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  exploreText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.8,
   },
 });

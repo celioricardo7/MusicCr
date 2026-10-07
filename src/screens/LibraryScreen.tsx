@@ -7,16 +7,17 @@ import {
   FlatList,
 } from 'react-native';
 
-import { musics } from '../data/musics';
 import { useMusic } from '../context/MusicContext';
 
 export default function LibraryScreen({
   navigation,
 }: any) {
   const {
-    setCurrentMusic,
+    musicas,
     favorites,
     playlist,
+    currentMusic,
+    setCurrentMusic,
     addFavorite,
     removeFavorite,
     addToPlaylist,
@@ -26,9 +27,11 @@ export default function LibraryScreen({
   function openPlayer(music: any) {
     setCurrentMusic(music);
 
-    navigation.getParent()?.navigate('Player', {
-      music,
-    });
+    navigation
+      .getParent()
+      ?.navigate('Player', {
+        music,
+      });
   }
 
   function toggleFavorite(music: any) {
@@ -70,7 +73,7 @@ export default function LibraryScreen({
   return (
     <View style={styles.container}>
 
-      {/* HEADER */}
+      {/* CABEÇALHO */}
 
       <View style={styles.header}>
         <View>
@@ -85,76 +88,171 @@ export default function LibraryScreen({
 
         <View style={styles.countBadge}>
           <Text style={styles.countText}>
-            {musics.length}
+            {musicas.length}
           </Text>
         </View>
       </View>
 
-      {/* DESCRIÇÃO */}
+
+      {/* MÚSICA ATUAL */}
+
+      {currentMusic && (
+        <Pressable
+          style={styles.currentCard}
+          onPress={() =>
+            openPlayer(currentMusic)
+          }
+        >
+          {currentMusic.cover ? (
+            <Image
+              source={{
+                uri: currentMusic.cover,
+              }}
+              style={styles.currentCover}
+            />
+          ) : (
+            <View
+              style={
+                styles.currentCoverPlaceholder
+              }
+            >
+              <Text
+                style={styles.currentCoverIcon}
+              >
+                ♪
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.currentInfo}>
+            <Text style={styles.currentLabel}>
+              MÚSICA SELECIONADA
+            </Text>
+
+            <Text
+              style={styles.currentTitle}
+              numberOfLines={1}
+            >
+              {currentMusic.title}
+            </Text>
+
+            <Text
+              style={styles.currentArtist}
+              numberOfLines={1}
+            >
+              {currentMusic.artist}
+            </Text>
+          </View>
+
+          <Text style={styles.currentArrow}>
+            ›
+          </Text>
+        </Pressable>
+      )}
+
+
+      {/* TÍTULO DA LISTA */}
 
       <View style={styles.descriptionContainer}>
-        <Text style={styles.description}>
-          Todas as músicas disponíveis no seu
-          dispositivo.
+        <Text style={styles.sectionTitle}>
+          SUAS MÚSICAS
         </Text>
       </View>
 
+
       {/* LISTA */}
 
-      <FlatList
-        data={musics}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.list}
-        renderItem={({ item, index }) => (
-          <View style={styles.musicCard}>
+      {musicas.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>
+            ♪
+          </Text>
 
-            <Pressable
-              style={styles.musicMain}
-              onPress={() => openPlayer(item)}
-            >
+          <Text style={styles.emptyTitle}>
+            Nenhuma música encontrada
+          </Text>
 
-              <View style={styles.numberContainer}>
-                <Text style={styles.number}>
-                  {String(index + 1).padStart(2, '0')}
-                </Text>
-              </View>
+          <Text style={styles.emptyText}>
+            Verifique se a API está funcionando.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={musicas}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          renderItem={({ item, index }) => (
+            <View style={styles.musicCard}>
 
-              <Image
-                source={item.cover}
-                style={styles.cover}
-              />
+              {/* PARTE PRINCIPAL */}
 
-              <View style={styles.info}>
+              <Pressable
+                style={styles.musicMain}
+                onPress={() =>
+                  openPlayer(item)
+                }
+              >
+                <View style={styles.numberContainer}>
+                  <Text style={styles.number}>
+                    {String(index + 1).padStart(
+                      2,
+                      '0'
+                    )}
+                  </Text>
+                </View>
 
-                <Text
-                  style={styles.musicTitle}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </Text>
 
-                <Text
-                  style={styles.artist}
-                  numberOfLines={1}
-                >
-                  {item.artist}
-                </Text>
+                {/* CAPA */}
 
-                <Text
-                  style={styles.album}
-                  numberOfLines={1}
-                >
-                  {item.album}
-                </Text>
+                {item.cover ? (
+                  <Image
+                    source={{
+                      uri: item.cover,
+                    }}
+                    style={styles.cover}
+                  />
+                ) : (
+                  <View
+                    style={
+                      styles.coverPlaceholder
+                    }
+                  >
+                    <Text style={styles.coverText}>
+                      ♪
+                    </Text>
+                  </View>
+                )}
 
-              </View>
 
-            </Pressable>
+                {/* INFORMAÇÕES */}
 
-            {/* AÇÕES */}
+                <View style={styles.info}>
+                  <Text
+                    style={styles.musicTitle}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
 
-            <View style={styles.actions}>
+                  <Text
+                    style={styles.artist}
+                    numberOfLines={1}
+                  >
+                    {item.artist}
+                  </Text>
+
+                  <Text
+                    style={styles.album}
+                    numberOfLines={1}
+                  >
+                    {item.album}
+                  </Text>
+                </View>
+              </Pressable>
+
+
+              {/* FAVORITO */}
 
               <Pressable
                 style={[
@@ -173,9 +271,14 @@ export default function LibraryScreen({
                       styles.activeActionText,
                   ]}
                 >
-                  {isFavorite(item) ? '♥' : '♡'}
+                  {isFavorite(item)
+                    ? '♥'
+                    : '♡'}
                 </Text>
               </Pressable>
+
+
+              {/* PLAYLIST */}
 
               <Pressable
                 style={[
@@ -194,19 +297,21 @@ export default function LibraryScreen({
                       styles.activeActionText,
                   ]}
                 >
-                  {isInPlaylist(item) ? '✓' : '+'}
+                  {isInPlaylist(item)
+                    ? '✓'
+                    : '+'}
                 </Text>
               </Pressable>
 
             </View>
-
-          </View>
-        )}
-      />
+          )}
+        />
+      )}
 
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -217,7 +322,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 22,
     paddingTop: 25,
-    paddingBottom: 12,
+    paddingBottom: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -253,15 +358,78 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  descriptionContainer: {
-    paddingHorizontal: 22,
-    marginBottom: 15,
+  currentCard: {
+    marginHorizontal: 18,
+    marginBottom: 25,
+    padding: 12,
+    borderRadius: 18,
+    backgroundColor: '#15171A',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
-  description: {
+  currentCover: {
+    width: 62,
+    height: 62,
+    borderRadius: 12,
+  },
+
+  currentCoverPlaceholder: {
+    width: 62,
+    height: 62,
+    borderRadius: 12,
+    backgroundColor: '#202328',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  currentCoverIcon: {
+    color: '#F4510B',
+    fontSize: 25,
+    fontWeight: '700',
+  },
+
+  currentInfo: {
+    flex: 1,
+    marginLeft: 14,
+  },
+
+  currentLabel: {
+    color: '#F4510B',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+
+  currentTitle: {
+    marginTop: 5,
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+
+  currentArtist: {
+    marginTop: 4,
     color: '#777A7D',
+    fontSize: 12,
+  },
+
+  currentArrow: {
+    color: '#777A7D',
+    fontSize: 28,
+    marginLeft: 10,
+  },
+
+  descriptionContainer: {
+    paddingHorizontal: 22,
+    marginBottom: 12,
+  },
+
+  sectionTitle: {
+    color: '#FFFFFF',
     fontSize: 13,
-    lineHeight: 19,
+    fontWeight: '800',
+    letterSpacing: 1.2,
   },
 
   list: {
@@ -271,7 +439,7 @@ const styles = StyleSheet.create({
 
   musicCard: {
     minHeight: 82,
-    marginBottom: 11,
+    marginBottom: 10,
     padding: 9,
     borderRadius: 18,
     backgroundColor: '#121417',
@@ -302,6 +470,21 @@ const styles = StyleSheet.create({
     borderRadius: 11,
   },
 
+  coverPlaceholder: {
+    width: 58,
+    height: 58,
+    borderRadius: 11,
+    backgroundColor: '#1C1F22',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  coverText: {
+    color: '#F4510B',
+    fontSize: 25,
+    fontWeight: '700',
+  },
+
   info: {
     flex: 1,
     marginLeft: 13,
@@ -327,11 +510,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
   actionButton: {
     width: 37,
     height: 37,
@@ -354,5 +532,32 @@ const styles = StyleSheet.create({
 
   activeActionText: {
     color: '#F4510B',
+  },
+
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+  },
+
+  emptyIcon: {
+    color: '#F4510B',
+    fontSize: 45,
+    marginBottom: 15,
+  },
+
+  emptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
+  emptyText: {
+    marginTop: 8,
+    color: '#777A7D',
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

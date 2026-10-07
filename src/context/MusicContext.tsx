@@ -13,15 +13,22 @@ import {
 
 import { Music } from '../types/Music';
 
+import {
+  buscarMusicas,
+  adicionarMusica,
+} from '../api/api';
+
 type MusicContextType = {
+  musicas: Music[];
   playlist: Music[];
   favorites: Music[];
-
   currentMusic: Music | null;
-
   isPlaying: boolean;
-
   audioPlayer: any;
+
+  addMusic: (
+    music: Omit<Music, 'id'>
+  ) => Promise<void>;
 
   setCurrentMusic: (music: Music) => void;
   setIsPlaying: (value: boolean) => void;
@@ -45,22 +52,17 @@ export function MusicProvider({
 }: {
   children: ReactNode;
 }) {
-  const [playlist, setPlaylist] =
-    useState<Music[]>([]);
+  const [musicas, setMusicas] = useState<Music[]>([]);
 
-  const [favorites, setFavorites] =
-    useState<Music[]>([]);
+  const [playlist, setPlaylist] = useState<Music[]>([]);
+
+  const [favorites, setFavorites] = useState<Music[]>([]);
 
   const [currentMusic, setCurrentMusicState] =
     useState<Music | null>(null);
 
-  const [isPlaying, setIsPlaying] =
-    useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  /*
-   * O player permanece vivo enquanto
-   * o MusicProvider estiver montado.
-   */
   const audioPlayer = useAudioPlayer(
     currentMusic?.audio ?? null
   );
@@ -68,22 +70,38 @@ export function MusicProvider({
   const audioStatus =
     useAudioPlayerStatus(audioPlayer);
 
-  /*
-   * Mantém o estado global sincronizado
-   * com o estado real do player.
-   */
+  useEffect(() => {
+    async function carregarMusicas() {
+      try {
+        const dados = await buscarMusicas();
+
+        console.log(
+          'Músicas recebidas da API:',
+          dados
+        );
+
+        setMusicas(dados);
+
+        if (dados.length > 0) {
+          setCurrentMusicState(dados[0]);
+        }
+      } catch (error) {
+        console.log(
+          'Erro ao carregar músicas:',
+          error
+        );
+      }
+    }
+
+    carregarMusicas();
+  }, []);
+
   useEffect(() => {
     setIsPlaying(
       audioStatus.playing
     );
   }, [audioStatus.playing]);
 
-  /*
-   * Define a música atual.
-   *
-   * Sempre que uma nova música é selecionada,
-   * o estado de reprodução é reiniciado.
-   */
   function setCurrentMusic(
     music: Music
   ) {
@@ -93,64 +111,92 @@ export function MusicProvider({
       return;
     }
 
-    /*
-     * Primeiro informa que não estamos
-     * reproduzindo a música anterior.
-     */
+    try {
+      audioPlayer.pause();
+
+      if (music.audio) {
+        audioPlayer.replace(
+          music.audio
+        );
+      }
+    } catch (error) {
+      console.log(
+        'Erro ao trocar música:',
+        error
+      );
+    }
+
     setIsPlaying(false);
 
-    /*
-     * Depois troca a música.
-     *
-     * O useAudioPlayer() detectará a alteração
-     * da fonte e carregará o novo áudio.
-     */
     setCurrentMusicState(music);
   }
 
-  /*
-   * Reproduzir.
-   */
   function playMusic() {
-    console.log(
-      'CONTEXT: playMusic()'
-    );
-
     if (!audioPlayer) {
+      return;
+    }
+
+    if (!currentMusic?.audio) {
       console.log(
-        'CONTEXT: player ainda não disponível'
+        'Esta música não possui áudio.'
       );
 
       return;
     }
 
-    console.log(
-      'CONTEXT: player.play()'
-    );
-
-    audioPlayer.play();
+    try {
+      audioPlayer.play();
+      setIsPlaying(true);
+    } catch (error) {
+      console.log(
+        'Erro ao reproduzir música:',
+        error
+      );
+    }
   }
 
-  /*
-   * Pausar.
-   */
   function pauseMusic() {
-    console.log(
-      'CONTEXT: pauseMusic()'
-    );
-
     if (!audioPlayer) {
       setIsPlaying(false);
-
       return;
     }
 
-    audioPlayer.pause();
+    try {
+      audioPlayer.pause();
+      setIsPlaying(false);
+    } catch (error) {
+      console.log(
+        'Erro ao pausar música:',
+        error
+      );
+    }
   }
 
-  /*
-   * FAVORITOS
-   */
+  async function addMusic(
+    music: Omit<Music, 'id'>
+  ) {
+    try {
+      const resposta =
+        await adicionarMusica(music);
+
+      setMusicas(
+        (currentMusicas) => [
+          ...currentMusicas,
+          resposta.musica,
+        ]
+      );
+
+      console.log(
+        'Música adicionada:',
+        resposta.musica
+      );
+    } catch (error) {
+      console.log(
+        'Erro ao adicionar música:',
+        error
+      );
+    }
+  }
 
   function addFavorite(
     music: Music
@@ -186,10 +232,6 @@ export function MusicProvider({
         )
     );
   }
-
-  /*
-   * PLAYLIST
-   */
 
   function addToPlaylist(
     music: Music
@@ -229,14 +271,14 @@ export function MusicProvider({
   return (
     <MusicContext.Provider
       value={{
+        musicas,
         playlist,
         favorites,
-
         currentMusic,
-
         isPlaying,
-
         audioPlayer,
+
+        addMusic,
 
         setCurrentMusic,
         setIsPlaying,

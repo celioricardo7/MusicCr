@@ -2,94 +2,62 @@ import {
   View,
   Text,
   TextInput,
-  Image,
   StyleSheet,
-  Pressable,
   FlatList,
+  Image,
+  Pressable,
 } from 'react-native';
 
 import { useState } from 'react';
 
-import { musics } from '../data/musics';
 import { useMusic } from '../context/MusicContext';
 
 export default function SearchScreen({
   navigation,
 }: any) {
-  const [search, setSearch] = useState('');
-
   const {
+    musicas,
     setCurrentMusic,
-    favorites,
-    playlist,
-    addFavorite,
-    removeFavorite,
-    addToPlaylist,
-    removeFromPlaylist,
   } = useMusic();
 
-  const filteredMusics = musics.filter((music) => {
-    const term = search.toLowerCase().trim();
+  const [pesquisa, setPesquisa] =
+    useState('');
 
-    if (!term) {
-      return true;
+  const resultados = musicas.filter(
+    (music) => {
+      const texto =
+        pesquisa.toLowerCase().trim();
+
+      if (!texto) {
+        return true;
+      }
+
+      return (
+        music.title
+          .toLowerCase()
+          .includes(texto) ||
+        music.artist
+          .toLowerCase()
+          .includes(texto) ||
+        music.album
+          .toLowerCase()
+          .includes(texto)
+      );
     }
+  );
 
-    return (
-      music.title.toLowerCase().includes(term) ||
-      music.artist.toLowerCase().includes(term) ||
-      music.album.toLowerCase().includes(term)
-    );
-  });
-
-  function openPlayer(music: any) {
+  function abrirPlayer(music: any) {
     setCurrentMusic(music);
 
-    navigation.getParent()?.navigate('Player', {
-      music,
-    });
-  }
-
-  function toggleFavorite(music: any) {
-    const exists = favorites.some(
-      (item) => item.id === music.id
-    );
-
-    if (exists) {
-      removeFavorite(music.id);
-    } else {
-      addFavorite(music);
-    }
-  }
-
-  function togglePlaylist(music: any) {
-    const exists = playlist.some(
-      (item) => item.id === music.id
-    );
-
-    if (exists) {
-      removeFromPlaylist(music.id);
-    } else {
-      addToPlaylist(music);
-    }
-  }
-
-  function isFavorite(music: any) {
-    return favorites.some(
-      (item) => item.id === music.id
-    );
-  }
-
-  function isInPlaylist(music: any) {
-    return playlist.some(
-      (item) => item.id === music.id
-    );
+    navigation
+      .getParent()
+      ?.navigate('Player', {
+        music,
+      });
   }
 
   return (
     <View style={styles.container}>
-
-      {/* HEADER */}
 
       <View style={styles.header}>
         <Text style={styles.smallTitle}>
@@ -97,179 +65,121 @@ export default function SearchScreen({
         </Text>
 
         <Text style={styles.title}>
-          Pesquisar
+          Pesquisa
         </Text>
       </View>
 
-      {/* PESQUISA */}
-
-      <View style={styles.searchContainer}>
+      <View style={styles.searchBox}>
         <Text style={styles.searchIcon}>
-          ⌕
+          🔎
         </Text>
 
         <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Pesquisar música, artista ou álbum..."
-          placeholderTextColor="#666A6E"
+          value={pesquisa}
+          onChangeText={setPesquisa}
+          placeholder="Pesquisar música ou artista"
+          placeholderTextColor="#777A7D"
           style={styles.input}
-          autoCorrect={false}
-          autoCapitalize="none"
-          returnKeyType="search"
         />
 
-        {search.length > 0 && (
+        {pesquisa.length > 0 && (
           <Pressable
-            style={styles.clearButton}
-            onPress={() => setSearch('')}
+            onPress={() => setPesquisa('')}
           >
-            <Text style={styles.clearText}>
+            <Text style={styles.clear}>
               ×
             </Text>
           </Pressable>
         )}
       </View>
 
-      {/* RESULTADOS */}
+      <Text style={styles.sectionTitle}>
+        {pesquisa
+          ? 'RESULTADOS'
+          : 'TODAS AS MÚSICAS'}
+      </Text>
 
-      <View style={styles.resultHeader}>
-        <Text style={styles.resultTitle}>
-          {search.trim()
-            ? 'RESULTADOS'
-            : 'TODAS AS MÚSICAS'}
-        </Text>
-
-        <Text style={styles.resultCount}>
-          {filteredMusics.length}
-        </Text>
-      </View>
-
-      {filteredMusics.length === 0 ? (
-        <View style={styles.emptyContainer}>
-
-          <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIcon}>
-              ⌕
-            </Text>
-          </View>
+      {resultados.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyIcon}>
+            ♪
+          </Text>
 
           <Text style={styles.emptyTitle}>
             Nenhuma música encontrada
           </Text>
 
           <Text style={styles.emptyText}>
-            Tente pesquisar por outro nome,
-            artista ou álbum.
+            Tente pesquisar outro nome ou artista.
           </Text>
-
         </View>
       ) : (
         <FlatList
-          data={filteredMusics}
+          data={resultados}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.list}
           renderItem={({ item, index }) => (
-            <View style={styles.musicCard}>
+            <Pressable
+              style={styles.musicCard}
+              onPress={() =>
+                abrirPlayer(item)
+              }
+            >
+              <Text style={styles.number}>
+                {String(index + 1).padStart(
+                  2,
+                  '0'
+                )}
+              </Text>
 
-              <Pressable
-                style={styles.musicMain}
-                onPress={() => openPlayer(item)}
-              >
-
-                <View style={styles.numberContainer}>
-                  <Text style={styles.number}>
-                    {String(index + 1).padStart(2, '0')}
-                  </Text>
-                </View>
-
+              {item.cover ? (
                 <Image
-                  source={item.cover}
+                  source={{
+                    uri: item.cover,
+                  }}
                   style={styles.cover}
                 />
-
-                <View style={styles.info}>
-
-                  <Text
-                    style={styles.musicTitle}
-                    numberOfLines={1}
-                  >
-                    {item.title}
+              ) : (
+                <View
+                  style={styles.coverPlaceholder}
+                >
+                  <Text style={styles.coverIcon}>
+                    ♪
                   </Text>
-
-                  <Text
-                    style={styles.artist}
-                    numberOfLines={1}
-                  >
-                    {item.artist}
-                  </Text>
-
-                  <Text
-                    style={styles.album}
-                    numberOfLines={1}
-                  >
-                    {item.album}
-                  </Text>
-
                 </View>
+              )}
 
-              </Pressable>
-
-              {/* AÇÕES */}
-
-              <View style={styles.actions}>
-
-                <Pressable
-                  style={[
-                    styles.actionButton,
-                    isFavorite(item) &&
-                      styles.activeAction,
-                  ]}
-                  onPress={() =>
-                    toggleFavorite(item)
-                  }
+              <View style={styles.info}>
+                <Text
+                  style={styles.musicTitle}
+                  numberOfLines={1}
                 >
-                  <Text
-                    style={[
-                      styles.actionIcon,
-                      isFavorite(item) &&
-                        styles.activeActionText,
-                    ]}
-                  >
-                    {isFavorite(item) ? '♥' : '♡'}
-                  </Text>
-                </Pressable>
+                  {item.title}
+                </Text>
 
-                <Pressable
-                  style={[
-                    styles.actionButton,
-                    isInPlaylist(item) &&
-                      styles.activeAction,
-                  ]}
-                  onPress={() =>
-                    togglePlaylist(item)
-                  }
+                <Text
+                  style={styles.artist}
+                  numberOfLines={1}
                 >
-                  <Text
-                    style={[
-                      styles.actionIcon,
-                      isInPlaylist(item) &&
-                        styles.activeActionText,
-                    ]}
-                  >
-                    {isInPlaylist(item) ? '✓' : '+'}
-                  </Text>
-                </Pressable>
+                  {item.artist}
+                </Text>
 
+                <Text
+                  style={styles.album}
+                  numberOfLines={1}
+                >
+                  {item.album}
+                </Text>
               </View>
 
-            </View>
+              <Text style={styles.arrow}>
+                ›
+              </Text>
+            </Pressable>
           )}
         />
       )}
-
     </View>
   );
 }
@@ -300,71 +210,41 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  searchContainer: {
-    height: 54,
+  searchBox: {
     marginHorizontal: 18,
-    paddingHorizontal: 16,
-    borderRadius: 17,
-    backgroundColor: '#15171A',
+    marginBottom: 25,
+    height: 52,
+    paddingHorizontal: 15,
+    borderRadius: 16,
+    backgroundColor: '#17191C',
     flexDirection: 'row',
     alignItems: 'center',
   },
 
   searchIcon: {
-    color: '#F4510B',
-    fontSize: 25,
-    marginRight: 9,
+    fontSize: 18,
+    marginRight: 10,
   },
 
   input: {
     flex: 1,
-    height: '100%',
     color: '#FFFFFF',
     fontSize: 14,
   },
 
-  clearButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#24272B',
-    alignItems: 'center',
-    justifyContent: 'center',
+  clear: {
+    color: '#777A7D',
+    fontSize: 27,
+    lineHeight: 27,
   },
 
-  clearText: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    lineHeight: 25,
-  },
-
-  resultHeader: {
-    paddingHorizontal: 22,
-    marginTop: 25,
+  sectionTitle: {
+    marginHorizontal: 22,
     marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  resultTitle: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 1.1,
-  },
-
-  resultCount: {
-    marginLeft: 9,
-    minWidth: 25,
-    height: 25,
-    borderRadius: 13,
-    backgroundColor: '#17191C',
-    color: '#777A7D',
-    fontSize: 11,
-    fontWeight: '700',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    paddingTop: 5,
+    letterSpacing: 1.2,
   },
 
   list: {
@@ -373,27 +253,18 @@ const styles = StyleSheet.create({
   },
 
   musicCard: {
-    minHeight: 82,
-    marginBottom: 11,
+    minHeight: 78,
+    marginBottom: 10,
     padding: 9,
-    borderRadius: 18,
+    borderRadius: 17,
     backgroundColor: '#121417',
     flexDirection: 'row',
     alignItems: 'center',
   },
 
-  musicMain: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  numberContainer: {
-    width: 27,
-    alignItems: 'center',
-  },
-
   number: {
+    width: 28,
+    textAlign: 'center',
     color: '#55595D',
     fontSize: 10,
     fontWeight: '700',
@@ -405,10 +276,25 @@ const styles = StyleSheet.create({
     borderRadius: 11,
   },
 
+  coverPlaceholder: {
+    width: 58,
+    height: 58,
+    borderRadius: 11,
+    backgroundColor: '#1C1F22',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  coverIcon: {
+    color: '#F4510B',
+    fontSize: 25,
+    fontWeight: '700',
+  },
+
   info: {
     flex: 1,
     marginLeft: 13,
-    marginRight: 5,
+    marginRight: 8,
   },
 
   musicTitle: {
@@ -430,70 +316,36 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  actionButton: {
-    width: 37,
-    height: 37,
-    borderRadius: 19,
-    backgroundColor: '#191B1E',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 5,
-  },
-
-  activeAction: {
-    backgroundColor: '#2A1A14',
-  },
-
-  actionIcon: {
+  arrow: {
     color: '#777A7D',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 27,
+    marginRight: 5,
   },
 
-  activeActionText: {
-    color: '#F4510B',
-  },
-
-  emptyContainer: {
+  empty: {
     flex: 1,
-    paddingHorizontal: 35,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 80,
-  },
-
-  emptyIconContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#15171A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 22,
+    paddingHorizontal: 30,
   },
 
   emptyIcon: {
     color: '#F4510B',
-    fontSize: 42,
+    fontSize: 45,
+    marginBottom: 15,
   },
 
   emptyTitle: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '700',
     textAlign: 'center',
   },
 
   emptyText: {
-    marginTop: 10,
+    marginTop: 8,
     color: '#777A7D',
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13,
     textAlign: 'center',
   },
 });

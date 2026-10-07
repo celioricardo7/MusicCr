@@ -9,20 +9,18 @@ export const musics: Music[] = [
     audio: require('../../assets/audios/pra-ela-sou-fofo.mp3'),
     cover: require('../../assets/images/capa.jpg'),
   },
-
   {
     id: '2',
-    title: 'Música 2',
-    artist: 'Artista 2',
+    title: 'Obrigado por tudo Desus',
+    artist: 'Bander',
     album: 'Meu Álbum',
     audio: require('../../assets/audios/musica-2.mp3'),
     cover: require('../../assets/images/capa.jpg'),
   },
-
   {
     id: '3',
-    title: 'Música 3',
-    artist: 'Artista 3',
+    title: 'Imperfeito',
+    artist: 'Dji Tafinha',
     album: 'Meu Álbum',
     audio: require('../../assets/audios/musica-3.mp3'),
     cover: require('../../assets/images/capa.jpg'),

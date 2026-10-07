@@ -6,25 +6,52 @@ import {
   Pressable,
 } from 'react-native';
 
-import { Music } from '../types/Music';
+import {
+  useNavigation,
+} from '@react-navigation/native';
+
 import { useMusic } from '../context/MusicContext';
 
-type Props = {
-  music: Music;
-  onPress: () => void;
-};
+export default function MiniPlayer() {
+  const navigation = useNavigation<any>();
 
-export default function MiniPlayer({
-  music,
-  onPress,
-}: Props) {
   const {
+    currentMusic,
     isPlaying,
     playMusic,
     pauseMusic,
   } = useMusic();
 
-  function togglePlay() {
+  if (!currentMusic) {
+    return null;
+  }
+
+  function abrirPlayer() {
+    let navigator = navigation;
+
+    while (navigator) {
+      const state = navigator.getState?.();
+
+      const encontrouPlayer =
+        state?.routeNames?.includes('Player');
+
+      if (encontrouPlayer) {
+        navigator.navigate('Player', {
+          music: currentMusic,
+        });
+
+        return;
+      }
+
+      navigator = navigator.getParent?.();
+    }
+
+    console.log(
+      'Não foi possível encontrar a tela Player.'
+    );
+  }
+
+  function alternarPlay() {
     if (isPlaying) {
       pauseMusic();
     } else {
@@ -33,130 +60,153 @@ export default function MiniPlayer({
   }
 
   return (
-    <View style={styles.container}>
-
-      {/* Área que abre o Player */}
-      <Pressable
-        style={styles.musicArea}
-        onPress={onPress}
-      >
+    <Pressable
+      style={styles.container}
+      onPress={abrirPlayer}
+    >
+      {currentMusic.cover ? (
         <Image
-          source={music.cover}
+          source={{
+            uri: currentMusic.cover,
+          }}
           style={styles.cover}
         />
-
-        <View style={styles.info}>
-          <Text
-            style={styles.title}
-            numberOfLines={1}
-          >
-            {music.title}
-          </Text>
-
-          <Text
-            style={styles.artist}
-            numberOfLines={1}
-          >
-            {music.artist}
+      ) : (
+        <View style={styles.coverPlaceholder}>
+          <Text style={styles.coverIcon}>
+            ♪
           </Text>
         </View>
-      </Pressable>
+      )}
 
-      {/* Reproduzir / Pausar */}
+      <View style={styles.info}>
+        <Text
+          style={styles.title}
+          numberOfLines={1}
+        >
+          {currentMusic.title}
+        </Text>
+
+        <Text
+          style={styles.artist}
+          numberOfLines={1}
+        >
+          {currentMusic.artist}
+        </Text>
+      </View>
+
       <Pressable
         style={styles.playButton}
-        onPress={togglePlay}
+        onPress={(event) => {
+          event.stopPropagation();
+          alternarPlay();
+        }}
       >
-        <Text style={styles.playText}>
+        <Text style={styles.playIcon}>
           {isPlaying ? 'Ⅱ' : '▶'}
         </Text>
       </Pressable>
-
-      {/* Abrir Player */}
-      <Pressable
-        style={styles.openButton}
-        onPress={onPress}
-      >
-        <Text style={styles.openText}>
-          ↑
-        </Text>
-      </Pressable>
-
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 64,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 14,
-    backgroundColor: '#15171A',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#202328',
-  },
+    position: 'absolute',
 
-  musicArea: {
-    flex: 1,
+    left: 12,
+    right: 12,
+
+    /*
+     * Fica acima da barra
+     * de navegação inferior.
+     */
+    bottom: 75,
+
+    height: 64,
+
+    paddingHorizontal: 8,
+
+    borderRadius: 16,
+
+    backgroundColor: '#181A1D',
+
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 0,
+
+    elevation: 8,
+
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
 
   cover: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 9,
+  },
+
+  coverPlaceholder: {
+    width: 48,
+    height: 48,
+
+    borderRadius: 9,
+
+    backgroundColor: '#25282C',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  coverIcon: {
+    color: '#F4510B',
+    fontSize: 22,
+    fontWeight: '700',
   },
 
   info: {
     flex: 1,
-    minWidth: 0,
-    marginLeft: 12,
+
+    marginLeft: 11,
+    marginRight: 8,
   },
 
   title: {
     color: '#FFFFFF',
-    fontSize: 14,
+
+    fontSize: 13,
     fontWeight: '700',
   },
 
   artist: {
     marginTop: 4,
-    color: '#777A7D',
+
+    color: '#8A8D91',
+
     fontSize: 11,
   },
 
   playButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    marginLeft: 8,
+    width: 44,
+    height: 44,
+
+    borderRadius: 22,
+
+    backgroundColor: '#F4510B',
+
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F4510B',
   },
 
-  playText: {
+  playIcon: {
     color: '#FFFFFF',
+
     fontSize: 16,
     fontWeight: '800',
-  },
-
-  openButton: {
-    width: 38,
-    height: 42,
-    marginLeft: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  openText: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '600',
   },
 });
