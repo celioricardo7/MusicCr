@@ -1,3 +1,4 @@
+
 {
   "musicas": [
     {
@@ -5,24 +6,24 @@
       "title": "Pra Ela Sou Fofo",
       "artist": "Helio Beatz",
       "album": "Meu Álbum",
-      "cover": "http://10.138.226.211:8000/capas/pra-ela-sou-fofo.jpg",
-      "audio": "http://10.138.226.211:8000/audios/pra-ela-sou-fofo.mp3"
+      "cover": "https://musiccr-api.onrender.com/capas/pra-ela-sou-fofo.jpg",
+      "audio": "https://musiccr-api.onrender.com/audios/pra-ela-sou-fofo.mp3"
     },
     {
       "id": "2",
       "title": "Música 2",
       "artist": "Helio Beatz",
       "album": "Meu Álbum",
-      "cover": "http://10.138.226.211:8000/capas/musica-2.jpg",
-      "audio": "http://10.138.226.211:8000/audios/musica-2.mp3"
+      "cover": "https://musiccr-api.onrender.com/capas/musica-2.jpg",
+      "audio": "https://musiccr-api.onrender.com/audios/musica-2.mp3"
     },
     {
       "id": "3",
       "title": "Música 3",
       "artist": "Helio Beatz",
       "album": "Meu Álbum",
-      "cover": "http://10.138.226.211:8000/capas/musica-3.jpg",
-      "audio": "http://10.138.226.211:8000/audios/musica-3.mp3"
+      "cover": "https://musiccr-api.onrender.com/capas/musica-3.jpg",
+      "audio": "https://musiccr-api.onrender.com/audios/musica-3.mp3"
     }
   ]
 }
